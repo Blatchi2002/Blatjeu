@@ -1,0 +1,225 @@
+document.addEventListener('DOMContentLoaded', () => {
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const message = document.getElementById('message');
+    const attackButton = document.getElementById('attackButton');
+    const potionButton = document.getElementById('potionButton');
+
+    // Ajuster la taille du canvas
+    function resizeCanvas() {
+        canvas.width = window.innerWidth * 0.9;
+        canvas.height = window.innerWidth * 0.9;
+        drawGame();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Variables du jeu
+    let currentLevel = 1;
+    let playerHealth = 100;
+    let enemyHealth = 6 * currentLevel;
+    let playerX = 50;
+    let enemyX = canvas.width - 100;
+    let playerY = canvas.height - 100;
+    let enemyY = canvas.height - 100;
+    let hasPotion = false;
+
+    // Fonction pour dessiner le château en arrière-plan
+    function drawCastle() {
+        ctx.fillStyle = 'gray';
+        ctx.fillRect(0, canvas.height - 150, canvas.width, 50); // Base du château
+        ctx.fillRect(canvas.width / 2 - 50, canvas.height - 200, 100, 100); // Tour centrale
+        ctx.fillRect(canvas.width / 2 - 100, canvas.height - 180, 50, 80); // Tour gauche
+        ctx.fillRect(canvas.width / 2 + 50, canvas.height - 180, 50, 80); // Tour droite
+    }
+
+    // Fonction pour dessiner les murs de l'arène
+    function drawArenaWalls() {
+        ctx.fillStyle = 'brown';
+        ctx.fillRect(0, canvas.height - 200, canvas.width, 20); // Mur du bas
+        ctx.fillRect(0, canvas.height - 200, 20, 200); // Mur de gauche
+        ctx.fillRect(canvas.width - 20, canvas.height - 200, 20, 200); // Mur de droite
+    }
+
+    // Fonction pour dessiner Finn
+    function drawPlayer() {
+        // Chapeau
+        ctx.fillStyle = 'white';
+        ctx.fillRect(playerX, playerY - 10, 30, 10);
+
+        // Tête
+        ctx.fillStyle = 'peachpuff';
+        ctx.beginPath();
+        ctx.arc(playerX + 15, playerY, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Corps
+        ctx.fillStyle = 'lightblue';
+        ctx.fillRect(playerX, playerY + 10, 30, 30);
+
+        // Bras
+        ctx.fillStyle = 'peachpuff';
+        ctx.fillRect(playerX - 10, playerY + 15, 10, 5);
+        ctx.fillRect(playerX + 30, playerY + 15, 10, 5);
+
+        // Pantalon
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(playerX, playerY + 40, 30, 20);
+
+        // Jambes
+        ctx.fillStyle = 'peachpuff';
+        ctx.fillRect(playerX, playerY + 60, 10, 20);
+        ctx.fillRect(playerX + 20, playerY + 60, 10, 20);
+    }
+
+    // Fonction pour dessiner l'ennemi (monstre)
+    function drawEnemy() {
+        // Corps
+        ctx.fillStyle = 'green';
+        ctx.fillRect(enemyX, enemyY, 40, 60);
+
+        // Tête
+        ctx.fillStyle = 'darkgreen';
+        ctx.beginPath();
+        ctx.arc(enemyX + 20, enemyY, 15, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Yeux
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(enemyX + 15, enemyY - 5, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(enemyX + 25, enemyY - 5, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Bras
+        ctx.fillStyle = 'green';
+        ctx.fillRect(enemyX - 10, enemyY + 20, 10, 5);
+        ctx.fillRect(enemyX + 40, enemyY + 20, 10, 5);
+
+        // Jambes
+        ctx.fillRect(enemyX + 5, enemyY + 60, 10, 20);
+        ctx.fillRect(enemyX + 25, enemyY + 60, 10, 20);
+    }
+
+    // Fonction pour dessiner la princesse
+    function drawPrincess() {
+        // Robe
+        ctx.fillStyle = 'pink';
+        ctx.fillRect(canvas.width / 2 - 20, canvas.height - 250, 40, 80);
+
+        // Tête
+        ctx.fillStyle = 'peachpuff';
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height - 280, 15, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Cheveux
+        ctx.fillStyle = 'blonde';
+        ctx.beginPath();
+        ctx.ellipse(canvas.width / 2, canvas.height - 290, 20, 15, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Couronne
+        ctx.fillStyle = 'gold';
+        ctx.fillRect(canvas.width / 2 - 10, canvas.height - 300, 20, 5);
+        ctx.beginPath();
+        ctx.moveTo(canvas.width / 2 - 10, canvas.height - 300);
+        ctx.lineTo(canvas.width / 2 - 5, canvas.height - 310);
+        ctx.lineTo(canvas.width / 2, canvas.height - 305);
+        ctx.lineTo(canvas.width / 2 + 5, canvas.height - 310);
+        ctx.lineTo(canvas.width / 2 + 10, canvas.height - 300);
+        ctx.fill();
+    }
+
+    // Fonction pour dessiner la potion
+    function drawPotion() {
+        if (hasPotion) {
+            ctx.fillStyle = 'green';
+            ctx.fillRect(canvas.width / 2 - 15, canvas.height / 2 - 15, 30, 30);
+        }
+    }
+
+    // Fonction pour dessiner les feux d'artifice
+    function drawFireworks() {
+        for (let i = 0; i < 10; i++) {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * (canvas.height - 200);
+            ctx.fillStyle = `hsl(${Math.random() * 360}, 100%, 50%)`;
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // Fonction pour dessiner le jeu
+    function drawGame() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawCastle();
+        drawArenaWalls();
+        drawPlayer();
+        drawEnemy();
+        drawPrincess();
+        drawPotion();
+
+        // Afficher les informations du jeu
+        ctx.fillStyle = 'black';
+        ctx.font = '20px Arial';
+        ctx.fillText(`Niveau: ${currentLevel}`, 50, 50);
+        ctx.fillText(`Vie du joueur: ${playerHealth}`, 50, 80);
+        ctx.fillText(`Vie de l'ennemi: ${enemyHealth}`, 50, 110);
+    }
+
+    // Fonction pour gérer les attaques
+    function attack() {
+        enemyHealth -= 10;
+        if (enemyHealth <= 0) {
+            currentLevel++;
+            if (currentLevel > 5) {
+                message.textContent = 'Félicitations! Vous avez sauvé la princesse!';
+                attackButton.disabled = true;
+                potionButton.disabled = true;
+            } else {
+                if (currentLevel === 3) {
+                    hasPotion = true;
+                    potionButton.disabled = false;
+                    message.textContent = `Niveau ${currentLevel} commencé! Potion de vie obtenue!`;
+                } else {
+                    message.textContent = `Niveau ${currentLevel} commencé!`;
+                }
+                enemyHealth = 6 * currentLevel;
+            }
+            drawFireworks();
+        } else {
+            playerHealth -= 5;
+            if (playerHealth <= 0) {
+                message.textContent = 'Game Over!';
+                attackButton.disabled = true;
+                potionButton.disabled = true;
+            }
+        }
+        drawGame();
+    }
+
+    // Fonction pour utiliser la potion
+    function usePotion() {
+        if (hasPotion) {
+            playerHealth = 100;
+            hasPotion = false;
+            potionButton.disabled = true;
+            message.textContent = 'Potion utilisée! Vie restaurée!';
+            drawGame();
+        }
+    }
+
+    // Écouteur d'événement pour l'attaque
+    attackButton.addEventListener('click', attack);
+
+    // Écouteur d'événement pour la potion
+    potionButton.addEventListener('click', usePotion);
+
+    // Dessiner le jeu initial
+    drawGame();
+});
